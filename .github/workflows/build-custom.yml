@@ -36,9 +36,10 @@ jobs:
           apiHash=${{ secrets.APP_HASH }}
           helperBotId=0
           helperBotUsername=dummy
-          sentryDsn=dummy
+          sentryDsn=https://dummy@sentry.io/1234567
           mapsApiKey=dummy_key
           EOF
+          
 
       - name: Inject Firebase Configuration
         run: |
