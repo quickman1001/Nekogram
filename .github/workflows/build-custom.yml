@@ -21,20 +21,20 @@ jobs:
       - name: Setup Keystore & local.properties
         run: |
           keytool -genkey -v -keystore release.keystore -alias nekogram -keyalg RSA -keysize 2048 -validity 10000 -storepass nekogram -keypass nekogram -dname "CN=Nekogram, OU=Nekogram, O=Nekogram, L=Unknown, ST=Unknown, C=Unknown"
+          cat <<EOF > local.properties
+          storeFile=${{ github.workspace }}/release.keystore
+          storePassword=nekogram
+          keyAlias=nekogram
+          keyPassword=nekogram
+          MAPS_API_KEY=dummy_key
+          MAPS_V2_API=dummy_key
+          google.maps_api_key=dummy_key
+          bugsnag_api_key=dummy_key
+          appcenter_secret=dummy_key
+          HUAWEI_APP_ID=dummy_key
+          HUAWEI_CP_ID=dummy_key
+          EOF
           
-          # 1. Add the required Keystore passwords
-          echo "storeFile=${{ github.workspace }}/release.keystore" > local.properties
-          echo "storePassword=nekogram" >> local.properties
-          echo "keyAlias=nekogram" >> local.properties
-          echo "keyPassword=nekogram" >> local.properties
-          
-          # 2. Smart script to scan the Nekogram code for EVERY requested property and inject a dummy for it!
-          for key in $(grep -hoE "localProperties\.getProperty\(['\"][^'\"]+['\"]" -R . | grep -oE "['\"][^'\"]+['\"]" | tr -d "'\""); do
-            echo "$key=dummy_value" >> local.properties
-          done
-          
-          # 3. Print the final file to the console so we can see what was secretly missing
-          cat local.properties
           
       - name: Inject Firebase Configuration
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > TMessagesProj/google-services.json
