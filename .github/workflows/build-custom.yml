@@ -1,0 +1,46 @@
+name: Build Nekogram
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v3
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Keystore & local.properties
+        run: |
+          keytool -genkey -v -keystore release.keystore -alias nekogram -keyalg RSA -keysize 2048 -validity 10000 -storepass nekogram -keypass nekogram -dname "CN=Nekogram, OU=Nekogram, O=Nekogram, L=Unknown, ST=Unknown, C=Unknown"
+          echo "storeFile=${{ github.workspace }}/release.keystore" > local.properties
+          echo "storePassword=nekogram" >> local.properties
+          echo "keyAlias=nekogram" >> local.properties
+          echo "keyPassword=nekogram" >> local.properties
+
+      - name: Inject Firebase Configuration
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > TMessagesProj/google-services.json
+
+      - name: Inject Telegram API Keys
+        run: |
+          sed -i "s/public static final int APP_ID = .*/public static final int APP_ID = ${{ secrets.APP_ID }};/" TMessagesProj/src/main/java/tw/nekomimi/nekogram/Extra.java
+          sed -i "s/public static final String APP_HASH = .*/public static final String APP_HASH = \"${{ secrets.APP_HASH }}\";/" TMessagesProj/src/main/java/tw/nekomimi/nekogram/Extra.java
+
+      - name: Grant Execute Permission to Gradle
+        run: chmod +x gradlew
+
+      - name: Build the App
+        run: ./gradlew assembleRelease
+
+      - name: Upload Compiled APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: nekogram-build
+          path: TMessagesProj/build/outputs/apk/*/release/*.apk
+          
