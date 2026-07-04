@@ -12,47 +12,47 @@ jobs:
         with:
           submodules: 'recursive'
 
-      - name: Set up JDK 17
-        uses: actions/setup-java@v3
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
         with:
-          java-version: '17'
+          java-version: '21'
           distribution: 'temurin'
+
+      - name: Configure Gradle Memory
+        run: |
+          mkdir -p ~/.gradle
+          echo 'org.gradle.jvmargs=-Xmx8192m -Dfile.encoding=UTF-8 -XX:+UseParallelGC' >> ~/.gradle/gradle.properties
 
       - name: Setup Keystore & local.properties
         run: |
           keytool -genkey -v -keystore release.keystore -alias nekogram -keyalg RSA -keysize 2048 -validity 10000 -storepass nekogram -keypass nekogram -dname "CN=Nekogram, OU=Nekogram, O=Nekogram, L=Unknown, ST=Unknown, C=Unknown"
+          
           cat <<EOF > local.properties
           storeFile=${{ github.workspace }}/release.keystore
           storePassword=nekogram
           keyAlias=nekogram
           keyPassword=nekogram
-          MAPS_API_KEY=dummy_key
-          MAPS_V2_API=dummy_key
-          google.maps_api_key=dummy_key
-          bugsnag_api_key=dummy_key
-          appcenter_secret=dummy_key
-          HUAWEI_APP_ID=dummy_key
-          HUAWEI_CP_ID=dummy_key
+          apiId=${{ secrets.APP_ID }}
+          apiHash=${{ secrets.APP_HASH }}
+          helperBotId=0
+          helperBotUsername=dummy
+          sentryDsn=dummy
+          mapsApiKey=dummy_key
           EOF
-          
-          
+
       - name: Inject Firebase Configuration
-        run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > TMessagesProj/google-services.json
-
-      - name: Inject Telegram API Keys
         run: |
-          sed -i "s/public static final int APP_ID = .*/public static final int APP_ID = ${{ secrets.APP_ID }};/" TMessagesProj/src/main/java/tw/nekomimi/nekogram/Extra.java
-          sed -i "s/public static final String APP_HASH = .*/public static final String APP_HASH = \"${{ secrets.APP_HASH }}\";/" TMessagesProj/src/main/java/tw/nekomimi/nekogram/Extra.java
-
-      - name: Grant Execute Permission to Gradle
-        run: chmod +x gradlew
+          echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > TMessagesProj_App/google-services.json
+          touch sentry.properties
 
       - name: Build the App
-        run: ./gradlew assembleRelease
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease
 
       - name: Upload Compiled APK
         uses: actions/upload-artifact@v4
         with:
-          name: nekogram-build
-          path: TMessagesProj/build/outputs/apk/*/release/*.apk
+          name: Nekogram-Build
+          path: TMessagesProj_App/build/outputs/apk/release/*.apk
           
