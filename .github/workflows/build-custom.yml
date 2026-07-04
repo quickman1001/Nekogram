@@ -25,7 +25,8 @@ jobs:
           echo "storePassword=nekogram" >> local.properties
           echo "keyAlias=nekogram" >> local.properties
           echo "keyPassword=nekogram" >> local.properties
-
+          echo "MAPS_API_KEY=dummy_key" >> local.properties
+          
       - name: Inject Firebase Configuration
         run: echo "${{ secrets.GOOGLE_SERVICES_JSON_BASE64 }}" | base64 --decode > TMessagesProj/google-services.json
 
